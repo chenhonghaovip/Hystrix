@@ -15,24 +15,21 @@
  */
 package com.netflix.hystrix;
 
-import java.util.concurrent.ConcurrentHashMap;
+import com.netflix.hystrix.exception.HystrixBadRequestException;
+import com.netflix.hystrix.exception.HystrixRuntimeException;
+import com.netflix.hystrix.strategy.executionhook.HystrixCommandExecutionHook;
+import com.netflix.hystrix.strategy.properties.HystrixPropertiesStrategy;
+import com.netflix.hystrix.util.Exceptions;
+import rx.Observable;
+import rx.functions.Action0;
+import rx.functions.Func0;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
-import com.netflix.hystrix.util.Exceptions;
-import rx.Observable;
-import rx.functions.Action0;
-
-import com.netflix.hystrix.exception.HystrixBadRequestException;
-import com.netflix.hystrix.exception.HystrixRuntimeException;
-import com.netflix.hystrix.exception.HystrixRuntimeException.FailureType;
-import com.netflix.hystrix.strategy.executionhook.HystrixCommandExecutionHook;
-import com.netflix.hystrix.strategy.properties.HystrixPropertiesStrategy;
-import rx.functions.Func0;
 
 /**
  * Used to wrap code that will execute potentially risky functionality (typically meaning a service call over the network)
@@ -341,6 +338,7 @@ public abstract class HystrixCommand<R> extends AbstractCommand<R> implements Hy
      */
     public R execute() {
         try {
+            // queue() 异步调用，返回 java.util.concurrent.Future,然后从future中获取结果
             return queue().get();
         } catch (Exception e) {
             throw Exceptions.sneakyThrow(decomposeException(e));

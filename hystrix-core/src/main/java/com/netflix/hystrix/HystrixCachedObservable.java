@@ -11,6 +11,11 @@ public class HystrixCachedObservable<R> {
     private volatile int outstandingSubscriptions = 0;
 
     protected HystrixCachedObservable(final Observable<R> originalObservable) {
+        /*
+         * 创建一个ReplaySubject，ReplaySubject既是一个生产者，也是一个消费者
+         * 通过subscribe()方法进行数据监听，通过onNext(1)方法来发射数据
+         * 接收到所有的数据，包括订阅之前的所有数据和订阅之后的所有数据。
+         */
         ReplaySubject<R> replaySubject = ReplaySubject.create();
         this.originalSubscription = originalObservable
                 .subscribe(replaySubject);

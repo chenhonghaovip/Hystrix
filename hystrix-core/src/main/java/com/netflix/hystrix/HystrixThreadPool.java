@@ -25,11 +25,7 @@ import org.slf4j.LoggerFactory;
 import rx.Scheduler;
 import rx.functions.Func0;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * ThreadPool used to executed {@link HystrixCommand#run()} on separate threads when configured to do so with {@link HystrixCommandProperties#executionIsolationStrategy()}.
@@ -101,17 +97,21 @@ public interface HystrixThreadPool {
          */
         /* package */static HystrixThreadPool getInstance(HystrixThreadPoolKey threadPoolKey, HystrixThreadPoolProperties.Setter propertiesBuilder) {
             // get the key to use instead of using the object itself so that if people forget to implement equals/hashcode things will still work
+            // 获取线程池key名称
             String key = threadPoolKey.name();
 
             // this should find it for all but the first time
+            // 首先从线程池缓存中查询
             HystrixThreadPool previouslyCached = threadPools.get(key);
             if (previouslyCached != null) {
                 return previouslyCached;
             }
 
             // if we get here this is the first time so we need to initialize
+            // 双锁检查机制，查询该服务对应的隔离线程池是否被创建
             synchronized (HystrixThreadPool.class) {
                 if (!threadPools.containsKey(key)) {
+                    // 创建HystrixThreadPoolDefault线程池
                     threadPools.put(key, new HystrixThreadPoolDefault(threadPoolKey, propertiesBuilder));
                 }
             }
@@ -169,10 +169,13 @@ public interface HystrixThreadPool {
         private final int queueSize;
 
         public HystrixThreadPoolDefault(HystrixThreadPoolKey threadPoolKey, HystrixThreadPoolProperties.Setter propertiesDefaults) {
+            // 解析传入的线程池属性，若是没有传入，使用默认的线程池配置
             this.properties = HystrixPropertiesFactory.getThreadPoolProperties(threadPoolKey, propertiesDefaults);
+            // 获取线程池策略
             HystrixConcurrencyStrategy concurrencyStrategy = HystrixPlugins.getInstance().getConcurrencyStrategy();
             this.queueSize = properties.maxQueueSize().get();
 
+            // 通过线程池策略创建线程池，concurrencyStrategy.getThreadPool(threadPoolKey, properties)
             this.metrics = HystrixThreadPoolMetrics.getInstance(threadPoolKey,
                     concurrencyStrategy.getThreadPool(threadPoolKey, properties),
                     properties);

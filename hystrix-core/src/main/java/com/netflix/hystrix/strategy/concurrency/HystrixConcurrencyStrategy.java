@@ -25,13 +25,7 @@ import com.netflix.hystrix.util.PlatformSpecific;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -95,9 +89,13 @@ public abstract class HystrixConcurrencyStrategy {
         final ThreadFactory threadFactory = getThreadFactory(threadPoolKey);
 
         final boolean allowMaximumSizeToDivergeFromCoreSize = threadPoolProperties.getAllowMaximumSizeToDivergeFromCoreSize().get();
+        // 核心池容量（默认为10）
         final int dynamicCoreSize = threadPoolProperties.coreSize().get();
         final int keepAliveTime = threadPoolProperties.keepAliveTimeMinutes().get();
+        // 阻塞队列长度
         final int maxQueueSize = threadPoolProperties.maxQueueSize().get();
+        // 获取线程池阻塞队列，根据队列最大值处理，如果maxQueueSize<0,阻塞队列为：SynchronousQueue
+        // 否则为LinkedBlockingQueue
         final BlockingQueue<Runnable> workQueue = getBlockingQueue(maxQueueSize);
 
         if (allowMaximumSizeToDivergeFromCoreSize) {

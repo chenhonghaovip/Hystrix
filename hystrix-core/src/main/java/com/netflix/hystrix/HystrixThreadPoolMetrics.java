@@ -17,11 +17,9 @@ package com.netflix.hystrix;
 
 import com.netflix.hystrix.metric.HystrixCommandCompletion;
 import com.netflix.hystrix.metric.consumer.CumulativeThreadPoolEventCounterStream;
-import com.netflix.hystrix.metric.consumer.RollingThreadPoolMaxConcurrencyStream;
 import com.netflix.hystrix.metric.consumer.RollingThreadPoolEventCounterStream;
+import com.netflix.hystrix.metric.consumer.RollingThreadPoolMaxConcurrencyStream;
 import com.netflix.hystrix.util.HystrixRollingNumberEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import rx.functions.Func0;
 import rx.functions.Func2;
 
@@ -61,6 +59,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
      */
     public static HystrixThreadPoolMetrics getInstance(HystrixThreadPoolKey key, ThreadPoolExecutor threadPool, HystrixThreadPoolProperties properties) {
         // attempt to retrieve from cache first
+        // 如果已经创建线程池，返回缓存信息
         HystrixThreadPoolMetrics threadPoolMetrics = metrics.get(key.name());
         if (threadPoolMetrics != null) {
             return threadPoolMetrics;
@@ -70,6 +69,7 @@ public class HystrixThreadPoolMetrics extends HystrixMetrics {
                 if (existingMetrics != null) {
                     return existingMetrics;
                 } else {
+                    // 正式创建线程池包装类
                     HystrixThreadPoolMetrics newThreadPoolMetrics = new HystrixThreadPoolMetrics(key, threadPool, properties);
                     metrics.putIfAbsent(key.name(), newThreadPoolMetrics);
                     return newThreadPoolMetrics;
